@@ -47,7 +47,6 @@ def test_webhook_aplica_regra_de_prioridade(
     assert cliente["status"] == "Processado"
     assert cliente["prioridade"] == prioridade_esperada
 
-    # Expõe as duas mutations updateCardField (status + prioridade).
     mutations = body["pipefy_mutations"]
     assert [m["name"] for m in mutations] == ["updateCardField", "updateCardField"]
     enviados = {m["variables"]["input"]["new_value"] for m in mutations}
@@ -57,7 +56,6 @@ def test_webhook_aplica_regra_de_prioridade(
 def test_webhook_event_id_duplicado_e_bloqueado(client, auth_headers, webhook_headers):
     email = "joao.silva@example.com"
     _criar_cliente(client, auth_headers, email, 250000)
-
     payload = {
         "event_id": "evt_123",
         "card_id": "card_456",
@@ -71,7 +69,6 @@ def test_webhook_event_id_duplicado_e_bloqueado(client, auth_headers, webhook_he
     assert primeira.status_code == 200
     assert primeira.json()["cliente"]["status"] == "Processado"
 
-    # Reentrega do mesmo evento: não reprocessa.
     segunda = client.post(
         "/webhooks/pipefy/card-updated", json=payload, headers=webhook_headers
     )

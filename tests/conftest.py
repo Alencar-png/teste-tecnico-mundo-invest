@@ -1,21 +1,27 @@
-"""Fixtures de teste: banco SQLite isolado em memória + TestClient."""
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
+"""Fixtures de teste: SQLite em memória isolado + TestClient autenticável."""
+import os
 
-from app import config, repository
-from app.database import Base, get_db
-from app.main import app
-from app.services import security_service
+# Força SQLite (sem MySQL) antes de qualquer import que toque config.database.
+os.environ["TESTING"] = "1"
 
-TEST_USER = {"email": "admin@test.com", "password": "secret123"}
+import bcrypt  # noqa: E402
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
+from sqlalchemy.pool import StaticPool  # noqa: E402
+
+from config.database import Base  # noqa: E402
+from models.models import User, UserRole  # noqa: E402
+from repositories.base_repository import get_db  # noqa: E402
+from repositories.security_repository import WEBHOOK_TOKEN  # noqa: E402
+from main import app  # noqa: E402
+
+TEST_ADMIN = {"email": "admin@test.com", "password": "secret123"}
 
 
 @pytest.fixture
 def client():
-    # StaticPool + memória compartilhada: todas as conexões enxergam a mesma base.
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -24,13 +30,19 @@ def client():
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     Base.metadata.create_all(bind=engine)
 
-    # Seed the test user for authentication.
+    # Semeia o usuário admin de teste.
     db = TestingSessionLocal()
-    repository.create_user(
-        db,
-        email=TEST_USER["email"],
-        hashed_password=security_service.hash_password(TEST_USER["password"]),
+    db.add(
+        User(
+            name="Admin",
+            email=TEST_ADMIN["email"],
+            password=bcrypt.hashpw(
+                TEST_ADMIN["password"].encode("utf-8"), bcrypt.gensalt()
+            ).decode("utf-8"),
+            role=UserRole.ADMIN,
+        )
     )
+    db.commit()
     db.close()
 
     def override_get_db():
@@ -48,13 +60,10 @@ def client():
 
 @pytest.fixture
 def auth_headers(client):
-    """Faz login e devolve o header Authorization Bearer."""
-    resp = client.post("/login", json=TEST_USER)
-    token = resp.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+    resp = client.post("/login", json=TEST_ADMIN)
+    return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
 
 @pytest.fixture
 def webhook_headers():
-    """Header com o segredo do webhook."""
-    return {"X-Webhook-Token": config.WEBHOOK_TOKEN}
+    return {"X-Webhook-Token": WEBHOOK_TOKEN}
