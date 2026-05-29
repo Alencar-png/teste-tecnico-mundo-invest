@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+.pytest_cache/
+.env
+
+# Node / Cypress
+node_modules/
+cypress/screenshots/
+cypress/videos/
