@@ -1,0 +1,13 @@
+{
+  "name": "client-desk-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Testes E2E (Cypress) do dashboard Client Desk + integração Pipefy",
+  "scripts": {
+    "cy:open": "cypress open",
+    "cy:run": "cypress run"
+  },
+  "devDependencies": {
+    "cypress": "^13.17.0"
+  }
+}
