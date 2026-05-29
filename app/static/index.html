@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mundo Invest · Client Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0a0b0e;
+    --ink-2: #101218;
+    --ink-3: #171a22;
+    --line: rgba(231, 222, 205, 0.09);
+    --line-strong: rgba(231, 222, 205, 0.16);
+    --gold: #e7c178;
+    --gold-soft: #c9a865;
+    --text: #ece6d8;
+    --muted: #888d99;
+    --green: #6fd9a6;
+    --amber: #e9b94f;
+    --red: #e8746b;
+    --shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Hanken Grotesk', sans-serif;
+    background: var(--ink);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Atmosfera: brilho dourado + grid sutil + grão */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(900px 600px at 78% -10%, rgba(231, 193, 120, 0.10), transparent 60%),
+      radial-gradient(700px 500px at 0% 110%, rgba(111, 217, 166, 0.05), transparent 55%),
+      linear-gradient(to bottom, rgba(231, 222, 205, 0.018) 1px, transparent 1px),
+      linear-gradient(to right, rgba(231, 222, 205, 0.018) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 46px, 46px 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.022;
+    pointer-events: none;
+    z-index: 0;
+    mix-blend-mode: overlay;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 0 28px 80px; }
+
+  /* ---------- Header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 28px;
+    backdrop-filter: blur(14px);
+    background: linear-gradient(to bottom, rgba(10, 11, 14, 0.92), rgba(10, 11, 14, 0.6));
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .mark {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 30% 25%, #2a2a2a, #0c0c0c);
+    border: 1px solid var(--line-strong);
+    box-shadow: inset 0 1px 0 rgba(231, 193, 120, 0.25);
+  }
+  .mark svg { width: 20px; height: 20px; }
+  .brand-text b {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px;
+    letter-spacing: 0.2px; display: block; line-height: 1.1;
+  }
+  .brand-text span { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); }
+
+  .header-right { display: flex; align-items: center; gap: 22px; }
+  .status-pill {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+    padding: 7px 14px; border: 1px solid var(--line); border-radius: 100px;
+    background: var(--ink-2);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.live { background: var(--green); box-shadow: 0 0 0 0 rgba(111, 217, 166, 0.5); animation: pulse 2s infinite; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(111, 217, 166, 0.45); }
+    70% { box-shadow: 0 0 0 7px rgba(111, 217, 166, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(111, 217, 166, 0); }
+  }
+  .docs-link { color: var(--gold); text-decoration: none; font-size: 13px; font-weight: 600; letter-spacing: 0.3px; border-bottom: 1px solid transparent; transition: border-color .2s; }
+  .docs-link:hover { border-color: var(--gold); }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 56px 0 34px; }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-soft); margin-bottom: 16px; }
+  .hero h1 {
+    font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(34px, 5vw, 58px);
+    line-height: 1.04; letter-spacing: -0.5px; max-width: 760px;
+  }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero p { color: var(--muted); max-width: 560px; margin-top: 18px; font-size: 15.5px; }
+
+  /* ---------- KPIs ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-top: 40px; }
+  .kpi { background: var(--ink-2); padding: 24px 26px; position: relative; }
+  .kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+  .kpi-value { font-family: 'Fraunces', serif; font-size: 44px; font-weight: 500; line-height: 1; margin-top: 14px; letter-spacing: -1px; }
+  .kpi:nth-child(4) .kpi-value { color: var(--gold); }
+  .kpi-foot { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  /* ---------- Grid principal ---------- */
+  .grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 22px; margin-top: 22px; }
+
+  .panel { background: var(--ink-2); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+  .panel-head h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 19px; display: flex; align-items: center; gap: 10px; }
+  .flux-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; color: var(--gold); border: 1px solid rgba(231, 193, 120, 0.3); padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
+  .panel-body { padding: 24px; }
+
+  .stack { display: flex; flex-direction: column; gap: 18px; }
+
+  label { display: block; font-size: 12px; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  input, select {
+    width: 100%; background: var(--ink-3); border: 1px solid var(--line-strong); color: var(--text);
+    padding: 13px 15px; border-radius: 10px; font-family: 'Hanken Grotesk', sans-serif; font-size: 14.5px;
+    transition: border-color .2s, box-shadow .2s; outline: none;
+  }
+  input::placeholder { color: #555a66; }
+  input:focus, select:focus { border-color: var(--gold-soft); box-shadow: 0 0 0 3px rgba(231, 193, 120, 0.12); }
+  .mono-input { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  .with-btn { display: flex; gap: 8px; }
+  .with-btn input { flex: 1; }
+  .mini-btn { background: var(--ink-3); border: 1px solid var(--line-strong); color: var(--gold); border-radius: 10px; padding: 0 14px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .2s; }
+  .mini-btn:hover { background: #1f232c; }
+
+  .btn {
+    width: 100%; padding: 14px; border: none; border-radius: 11px; cursor: pointer;
+    font-family: 'Hanken Grotesk', sans-serif; font-weight: 700; font-size: 14.5px; letter-spacing: 0.3px;
+    background: linear-gradient(180deg, #f0cd87, #d6ab5d); color: #1a1408;
+    transition: transform .12s, box-shadow .2s; box-shadow: 0 8px 24px -8px rgba(231, 193, 120, 0.5);
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 30px -8px rgba(231, 193, 120, 0.6); }
+  .btn:active { transform: translateY(0); }
+  .btn.ghost { background: transparent; border: 1px solid var(--line-strong); color: var(--text); box-shadow: none; }
+  .btn.ghost:hover { border-color: var(--gold-soft); }
+
+  .hint { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+  /* ---------- GraphQL Live Wire ---------- */
+  .wire { display: flex; flex-direction: column; }
+  .wire-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+  .wire-head h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 19px; }
+  .wire-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .endpoint { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold-soft); display: flex; align-items: center; gap: 8px; }
+  .wire-body { padding: 18px 20px; flex: 1; max-height: 560px; overflow-y: auto; }
+  .wire-empty { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 13px; text-align: center; padding: 60px 20px; line-height: 1.8; }
+  .wire-empty svg { width: 40px; height: 40px; opacity: .4; margin-bottom: 14px; }
+
+  .mut { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 14px; background: #0c0e13; }
+  .mut.flash { animation: flash 1.1s ease-out; }
+  @keyframes flash {
+    0% { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(231, 193, 120, 0.18); }
+    100% { border-color: var(--line); box-shadow: 0 0 0 0 transparent; }
+  }
+  .mut-bar { display: flex; align-items: center; justify-content: space-between; padding: 11px 15px; background: var(--ink-3); border-bottom: 1px solid var(--line); }
+  .mut-name { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: var(--gold); display: flex; align-items: center; gap: 9px; }
+  .sent { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--green); display: flex; align-items: center; gap: 6px; }
+  .sent::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  pre { margin: 0; padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; overflow-x: auto; white-space: pre; }
+  .seg-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 12px 15px 4px; border-top: 1px solid var(--line); }
+
+  /* syntax */
+  .t-key { color: #d98c6a; }       /* mutation/query */
+  .t-name { color: var(--gold); }   /* operation/field names */
+  .t-var { color: #7fb3e0; }        /* $vars */
+  .t-type { color: #6fd9a6; }       /* GraphQL types */
+  .t-punc { color: #6b7280; }
+  .j-key { color: #7fb3e0; }
+  .j-str { color: #e0c98a; }
+  .j-num { color: #6fd9a6; }
+  .j-punc { color: #6b7280; }
+
+  /* ---------- Tabela ---------- */
+  .table-panel { margin-top: 22px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); padding: 14px 24px; border-bottom: 1px solid var(--line); font-weight: 600; }
+  tbody td { padding: 16px 24px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(231, 193, 120, 0.03); }
+  tbody tr:last-child td { border-bottom: none; }
+  .cli-name { font-weight: 600; }
+  .cli-mail { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+  .money { font-family: 'Fraunces', serif; font-size: 17px; }
+  .card-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .badge { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 100px; white-space: nowrap; }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .b-wait { color: var(--amber); background: rgba(233, 185, 79, 0.10); }
+  .b-done { color: var(--green); background: rgba(111, 217, 166, 0.10); }
+  .b-alta { color: var(--gold); background: rgba(231, 193, 120, 0.12); border: 1px solid rgba(231, 193, 120, 0.25); }
+  .b-normal { color: var(--muted); background: rgba(136, 141, 153, 0.08); }
+  .b-none { color: #4a4f5a; }
+  .empty-row td { text-align: center; color: var(--muted); padding: 48px; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+  /* ---------- Toasts ---------- */
+  #toasts { position: fixed; bottom: 26px; right: 26px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+  .toast { display: flex; align-items: center; gap: 12px; background: var(--ink-3); border: 1px solid var(--line-strong); border-left: 3px solid var(--gold); padding: 14px 18px; border-radius: 11px; min-width: 280px; box-shadow: var(--shadow); animation: slideIn .3s cubic-bezier(.2,.8,.2,1); }
+  .toast.ok { border-left-color: var(--green); }
+  .toast.warn { border-left-color: var(--amber); }
+  .toast.err { border-left-color: var(--red); }
+  .toast b { font-size: 14px; display: block; }
+  .toast small { color: var(--muted); font-size: 12px; }
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  .reveal { opacity: 0; transform: translateY(18px); animation: rise .7s forwards; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  @media (max-width: 900px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid { grid-template-columns: 1fr; }
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 17l5-6 4 4 6-9" stroke="#e7c178" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="6" r="2" fill="#e7c178"/></svg>
+      </div>
+      <div class="brand-text">
+        <b>Mundo Invest</b>
+        <span>Client Desk</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill"><span class="dot" id="apiDot"></span><span id="apiState">verificando…</span></div>
+      <a class="docs-link" href="/docs" target="_blank">API · /docs ↗</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="hero reveal">
+      <div class="eyebrow">Gestão de Clientes · Integração Pipefy</div>
+      <h1>Patrimônio sob controle, do <em>cadastro</em> ao <em>card</em> no Pipefy.</h1>
+      <p>Cada ação aqui dispara a mutation GraphQL real do Pipefy — exibida ao vivo no painel ao lado, exatamente como sairia para a API oficial.</p>
+    </section>
+
+    <section class="kpis reveal" style="animation-delay:.08s">
+      <div class="kpi"><div class="kpi-label">Clientes</div><div class="kpi-value" id="kTotal">0</div><div class="kpi-foot">total no banco local</div></div>
+      <div class="kpi"><div class="kpi-label">Aguardando</div><div class="kpi-value" id="kWait">0</div><div class="kpi-foot">status inicial</div></div>
+      <div class="kpi"><div class="kpi-label">Processados</div><div class="kpi-value" id="kDone">0</div><div class="kpi-foot">via webhook</div></div>
+      <div class="kpi"><div class="kpi-label">Prioridade Alta</div><div class="kpi-value" id="kHigh">0</div><div class="kpi-foot">≥ R$ 200.000</div></div>
+    </section>
+
+    <div class="grid">
+      <!-- Coluna de ações -->
+      <div class="stack">
+        <!-- Fluxo 1 -->
+        <div class="panel reveal" style="animation-delay:.16s">
+          <div class="panel-head">
+            <h2>Novo Cliente</h2>
+            <span class="flux-tag">Fluxo 1 · createCard</span>
+          </div>
+          <div class="panel-body">
+            <form id="formCliente" class="stack">
+              <div>
+                <label>Nome do cliente</label>
+                <input name="cliente_nome" placeholder="João Silva" required />
+              </div>
+              <div>
+                <label>E-mail</label>
+                <input name="cliente_email" type="email" class="mono-input" placeholder="joao.silva@example.com" required />
+              </div>
+              <div class="field-row">
+                <div>
+                  <label>Tipo de solicitação</label>
+                  <select name="tipo_solicitacao">
+                    <option>Atualização cadastral</option>
+                    <option>Abertura de conta</option>
+                    <option>Resgate</option>
+                    <option>Aporte</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Patrimônio (R$)</label>
+                  <input name="valor_patrimonio" type="number" min="0" step="1000" class="mono-input" placeholder="250000" required />
+                </div>
+              </div>
+              <button class="btn" type="submit">Criar cliente &amp; card →</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Fluxo 2 -->
+        <div class="panel reveal" style="animation-delay:.24s">
+          <div class="panel-head">
+            <h2>Simular Webhook</h2>
+            <span class="flux-tag">Fluxo 2 · updateCardField</span>
+          </div>
+          <div class="panel-body">
+            <form id="formWebhook" class="stack">
+              <div>
+                <label>Cliente (e-mail)</label>
+                <select name="cliente_email" id="whEmail"><option value="">— selecione —</option></select>
+              </div>
+              <div class="field-row">
+                <div>
+                  <label>Event ID</label>
+                  <div class="with-btn">
+                    <input name="event_id" id="whEvent" class="mono-input" placeholder="evt_123" required />
+                    <button type="button" class="mini-btn" id="genEvent">novo</button>
+                  </div>
+                </div>
+                <div>
+                  <label>Card ID</label>
+                  <input name="card_id" id="whCard" class="mono-input" placeholder="card_456" required />
+                </div>
+              </div>
+              <button class="btn ghost" type="submit">Disparar webhook →</button>
+              <div class="hint">Reenvie o mesmo <b>Event ID</b> para ver a idempotência em ação.</div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- GraphQL Live Wire -->
+      <div class="panel wire reveal" style="animation-delay:.2s">
+        <div class="wire-head">
+          <div>
+            <h2>Pipefy GraphQL · Live Wire</h2>
+            <div class="wire-sub">payload exato transmitido à API</div>
+          </div>
+          <div class="endpoint"><span class="dot live"></span>api.pipefy.com/graphql</div>
+        </div>
+        <div class="wire-body" id="wire">
+          <div class="wire-empty">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h10M4 17h7" stroke="#e7c178" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Nenhuma mutation transmitida ainda.<br/>Crie um cliente ou dispare um webhook<br/>para ver o GraphQL real aqui.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="panel table-panel reveal" style="animation-delay:.3s">
+      <div class="panel-head">
+        <h2>Carteira de Clientes</h2>
+        <button class="mini-btn" id="reload">↻ atualizar</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Cliente</th><th>Patrimônio</th><th>Status</th><th>Prioridade</th><th>Card Pipefy</th></tr>
+        </thead>
+        <tbody id="tbody">
+          <tr class="empty-row"><td colspan="5">carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const brl = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// ---------- Toasts ----------
+function toast(kind, title, sub) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind;
+  el.innerHTML = `<div><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div>`;
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.style.transition = 'opacity .4s, transform .4s'; el.style.opacity = '0'; el.style.transform = 'translateX(40px)'; setTimeout(() => el.remove(), 400); }, 4200);
+}
+
+// ---------- Realce de sintaxe ----------
+function highlightGraphQL(src) {
+  let s = esc(src);
+  s = s.replace(/\b(mutation|query)\b/g, '<span class="t-key">$1</span>');
+  s = s.replace(/(\$[A-Za-z_]\w*)/g, '<span class="t-var">$1</span>');
+  s = s.replace(/([A-Za-z_]\w*Input!?)/g, '<span class="t-type">$1</span>');
+  s = s.replace(/(\b[A-Za-z_]\w*)(\s*\()/g, '<span class="t-name">$1</span>$2');
+  s = s.replace(/([{}()!:])/g, '<span class="t-punc">$1</span>');
+  return s;
+}
+function highlightJSON(obj) {
+  let s = esc(JSON.stringify(obj, null, 2));
+  s = s.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")(\s*:)?/g, (m, str, _g, colon) =>
+    colon ? `<span class="j-key">${str}</span>${colon}` : `<span class="j-str">${str}</span>`);
+  s = s.replace(/\b(-?\d+\.?\d*)\b/g, '<span class="j-num">$1</span>');
+  s = s.replace(/([{}\[\],])/g, '<span class="j-punc">$1</span>');
+  return s;
+}
+
+// ---------- Render do Live Wire ----------
+function renderMutations(mutations) {
+  const wire = $('#wire');
+  wire.innerHTML = '';
+  mutations.forEach((m, i) => {
+    const card = document.createElement('div');
+    card.className = 'mut flash';
+    card.style.animationDelay = (i * 0.12) + 's';
+    card.innerHTML = `
+      <div class="mut-bar">
+        <span class="mut-name">⬡ ${esc(m.name)}</span>
+        <span class="sent">transmitido</span>
+      </div>
+      <pre>${highlightGraphQL(m.query)}</pre>
+      <div class="seg-label">variables</div>
+      <pre>${highlightJSON(m.variables)}</pre>`;
+    wire.appendChild(card);
+  });
+}
+
+// ---------- KPIs + tabela ----------
+function statusBadge(s) {
+  if (s === 'Processado') return '<span class="badge b-done">Processado</span>';
+  return '<span class="badge b-wait">Aguardando Análise</span>';
+}
+function prioBadge(p) {
+  if (p === 'prioridade_alta') return '<span class="badge b-alta">Alta</span>';
+  if (p === 'prioridade_normal') return '<span class="badge b-normal">Normal</span>';
+  return '<span class="badge b-none">—</span>';
+}
+
+async function loadClientes() {
+  try {
+    const res = await fetch('/clientes');
+    const data = await res.json();
+    // KPIs
+    $('#kTotal').textContent = data.length;
+    $('#kWait').textContent = data.filter(c => c.status !== 'Processado').length;
+    $('#kDone').textContent = data.filter(c => c.status === 'Processado').length;
+    $('#kHigh').textContent = data.filter(c => c.prioridade === 'prioridade_alta').length;
+    // Select de e-mails do webhook
+    const sel = $('#whEmail'); const cur = sel.value;
+    sel.innerHTML = '<option value="">— selecione —</option>' +
+      data.map(c => `<option value="${esc(c.email)}" data-card="${esc(c.pipefy_card_id || '')}">${esc(c.email)}</option>`).join('');
+    if (cur) sel.value = cur;
+    // Tabela
+    const tb = $('#tbody');
+    if (!data.length) { tb.innerHTML = '<tr class="empty-row"><td colspan="5">nenhum cliente cadastrado ainda</td></tr>'; return; }
+    tb.innerHTML = data.map(c => `
+      <tr>
+        <td><div class="cli-name">${esc(c.nome)}</div><div class="cli-mail">${esc(c.email)}</div></td>
+        <td class="money">${brl(c.valor_patrimonio)}</td>
+        <td>${statusBadge(c.status)}</td>
+        <td>${prioBadge(c.prioridade)}</td>
+        <td class="card-id">${esc(c.pipefy_card_id || '—')}</td>
+      </tr>`).join('');
+  } catch (e) {
+    toast('err', 'Falha ao carregar clientes', String(e));
+  }
+}
+
+// ---------- Health ----------
+async function checkHealth() {
+  try {
+    const r = await fetch('/health'); const j = await r.json();
+    if (j.status === 'ok') { $('#apiDot').classList.add('live'); $('#apiState').textContent = 'API online'; return; }
+  } catch (e) {}
+  $('#apiState').textContent = 'API offline';
+}
+
+// ---------- Helpers webhook ----------
+let evtCounter = 100;
+function genEventId() { evtCounter++; return 'evt_' + (Date.now().toString(36)) + '_' + evtCounter; }
+$('#genEvent').addEventListener('click', () => { $('#whEvent').value = genEventId(); });
+$('#whEmail').addEventListener('change', (e) => {
+  const opt = e.target.selectedOptions[0];
+  const card = opt && opt.dataset.card;
+  if (card) $('#whCard').value = card;
+});
+
+// ---------- Submit Fluxo 1 ----------
+$('#formCliente').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target; const fd = Object.fromEntries(new FormData(f));
+  fd.valor_patrimonio = Number(fd.valor_patrimonio);
+  const btn = f.querySelector('button'); btn.disabled = true; btn.textContent = 'enviando…';
+  try {
+    const res = await fetch('/clientes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) });
+    const body = await res.json();
+    if (res.status === 201) {
+      renderMutations(body.pipefy_mutations);
+      toast('ok', 'Cliente criado', `${body.cliente.nome} · ${body.cliente.status}`);
+      f.reset();
+      await loadClientes();
+    } else if (res.status === 409) {
+      toast('warn', 'Cliente já existe', body.detail);
+    } else {
+      toast('err', 'Erro de validação', (body.detail && body.detail[0] && body.detail[0].msg) || 'Verifique os campos');
+    }
+  } catch (err) { toast('err', 'Falha na requisição', String(err)); }
+  finally { btn.disabled = false; btn.textContent = 'Criar cliente & card →'; }
+});
+
+// ---------- Submit Fluxo 2 ----------
+$('#formWebhook').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target; const fd = Object.fromEntries(new FormData(f));
+  if (!fd.cliente_email) { toast('warn', 'Selecione um cliente', 'O webhook precisa de um e-mail'); return; }
+  fd.timestamp = new Date().toISOString();
+  const btn = f.querySelector('button'); btn.disabled = true; btn.textContent = 'disparando…';
+  try {
+    const res = await fetch('/webhooks/pipefy/card-updated', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) });
+    const body = await res.json();
+    if (res.status === 200 && body.cliente) {
+      renderMutations(body.pipefy_mutations);
+      toast('ok', 'Webhook processado', `${body.cliente.nome} · ${body.cliente.prioridade}`);
+      await loadClientes();
+    } else if (res.status === 200) {
+      toast('warn', 'Evento ignorado (idempotência)', body.detail);
+    } else if (res.status === 404) {
+      toast('err', 'Cliente não encontrado', body.detail);
+    } else {
+      toast('err', 'Erro', JSON.stringify(body));
+    }
+  } catch (err) { toast('err', 'Falha na requisição', String(err)); }
+  finally { btn.disabled = false; btn.textContent = 'Disparar webhook →'; }
+});
+
+$('#reload').addEventListener('click', loadClientes);
+$('#whEvent').value = genEventId();
+
+checkHealth();
+loadClientes();
+</script>
+</body>
+</html>
