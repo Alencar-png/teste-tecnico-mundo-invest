@@ -1,14 +1,14 @@
 """Teste obrigatório 1: criação de cliente com payload válido e persistência."""
 
 
-def test_criar_cliente_valido_salva_no_banco(client):
+def test_criar_cliente_valido_salva_no_banco(client, auth_headers):
     payload = {
         "cliente_nome": "João Silva",
         "cliente_email": "joao.silva@example.com",
         "tipo_solicitacao": "Atualização cadastral",
         "valor_patrimonio": 250000,
     }
-    resp = client.post("/clientes", json=payload)
+    resp = client.post("/clientes", json=payload, headers=auth_headers)
 
     assert resp.status_code == 201
     body = resp.json()
@@ -27,25 +27,36 @@ def test_criar_cliente_valido_salva_no_banco(client):
     assert "createCard(input: $input)" in mutations[0]["query"]
 
     # Confirma que persistiu: aparece na listagem e duplicar dá 409.
-    listagem = client.get("/clientes")
+    listagem = client.get("/clientes", headers=auth_headers)
     assert listagem.status_code == 200
     assert any(c["email"] == "joao.silva@example.com" for c in listagem.json())
-    dup = client.post("/clientes", json=payload)
+    dup = client.post("/clientes", json=payload, headers=auth_headers)
     assert dup.status_code == 409
 
 
-def test_criar_cliente_email_invalido_retorna_422(client):
+def test_criar_cliente_sem_token_retorna_401(client):
+    payload = {
+        "cliente_nome": "Sem Auth",
+        "cliente_email": "sem.auth@example.com",
+        "tipo_solicitacao": "Atualização cadastral",
+        "valor_patrimonio": 1000,
+    }
+    resp = client.post("/clientes", json=payload)
+    assert resp.status_code == 401
+
+
+def test_criar_cliente_email_invalido_retorna_422(client, auth_headers):
     payload = {
         "cliente_nome": "Maria",
         "cliente_email": "email-invalido",
         "tipo_solicitacao": "Atualização cadastral",
         "valor_patrimonio": 1000,
     }
-    resp = client.post("/clientes", json=payload)
+    resp = client.post("/clientes", json=payload, headers=auth_headers)
     assert resp.status_code == 422
 
 
-def test_criar_cliente_campo_obrigatorio_ausente_retorna_422(client):
+def test_criar_cliente_campo_obrigatorio_ausente_retorna_422(client, auth_headers):
     payload = {"cliente_email": "x@example.com", "valor_patrimonio": 1000}
-    resp = client.post("/clientes", json=payload)
+    resp = client.post("/clientes", json=payload, headers=auth_headers)
     assert resp.status_code == 422

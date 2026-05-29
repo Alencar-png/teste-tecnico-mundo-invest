@@ -1,11 +1,15 @@
-"""Schemas Pydantic: validação de entrada e serialização de saída."""
+"""Pydantic schemas: input validation and output serialization.
+
+Field names follow the Portuguese contract mandated by the technical test;
+class names and docs are in English.
+"""
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-# ---------- Entrada ----------
-class ClienteCreate(BaseModel):
+# ---------- Input ----------
+class ClientCreate(BaseModel):
     cliente_nome: str = Field(..., min_length=1)
     cliente_email: EmailStr
     tipo_solicitacao: str = Field(..., min_length=1)
@@ -19,8 +23,19 @@ class WebhookCardUpdated(BaseModel):
     timestamp: str
 
 
-# ---------- Saída ----------
-class ClienteOut(BaseModel):
+# ---------- Authentication ----------
+class SecuritySchema(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=1)
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+# ---------- Output ----------
+class ClientOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -34,19 +49,27 @@ class ClienteOut(BaseModel):
 
 
 class GraphQLMutation(BaseModel):
-    """Payload GraphQL exato que seria enviado ao Pipefy (para exibição)."""
+    """Exact GraphQL payload that would be sent to Pipefy (for display)."""
 
     name: str
     query: str
     variables: dict
 
 
-class ClienteCreateResult(BaseModel):
-    cliente: ClienteOut
+class ClientCreateResult(BaseModel):
+    cliente: ClientOut
     pipefy_mutations: list[GraphQLMutation]
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: EmailStr
+    role: str
 
 
 class WebhookResult(BaseModel):
     detail: str
-    cliente: ClienteOut | None = None
+    cliente: ClientOut | None = None
     pipefy_mutations: list[GraphQLMutation] = []

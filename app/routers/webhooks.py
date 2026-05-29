@@ -1,29 +1,34 @@
-"""Router do Fluxo 2: webhook de card atualizado."""
+"""Flow 2 router: Pipefy card-updated webhook."""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import schemas
 from app.database import get_db
-from app.services import cliente_service
+from app.services import client_service
 from app.services.pipefy_client import PipefyClient
+from app.services.security_service import require_webhook_token
 
 router = APIRouter(prefix="/webhooks/pipefy", tags=["webhooks"])
 
 
-@router.post("/card-updated", response_model=schemas.WebhookResult)
-def card_updated(dados: schemas.WebhookCardUpdated, db: Session = Depends(get_db)):
+@router.post(
+    "/card-updated",
+    response_model=schemas.WebhookResult,
+    dependencies=[Depends(require_webhook_token)],
+)
+def card_updated(data: schemas.WebhookCardUpdated, db: Session = Depends(get_db)):
     try:
-        cliente, mutations = cliente_service.processar_webhook(db, dados, PipefyClient())
-    except cliente_service.EventoDuplicadoError:
-        # Idempotência: 200 com aviso — reentregas do webhook são esperadas.
+        client, mutations = client_service.process_webhook(db, data, PipefyClient())
+    except client_service.DuplicateEventError:
+        # Idempotency: 200 with a notice — webhook re-deliveries are expected.
         return schemas.WebhookResult(
-            detail=f"Evento {dados.event_id} já processado; ignorado."
+            detail=f"Evento {data.event_id} já processado; ignorado."
         )
-    except cliente_service.ClienteNaoEncontradoError:
+    except client_service.ClientNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Cliente não encontrado para o e-mail informado.",
         )
     return schemas.WebhookResult(
-        detail="Webhook processado.", cliente=cliente, pipefy_mutations=mutations
+        detail="Webhook processado.", cliente=client, pipefy_mutations=mutations
     )

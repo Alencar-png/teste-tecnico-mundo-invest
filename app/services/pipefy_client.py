@@ -1,14 +1,14 @@
-"""Cliente Pipefy (GraphQL).
+"""Pipefy client (GraphQL).
 
-Esta camada concentra as queries/mutations no formato EXATO da API GraphQL
-oficial do Pipefy. Em vez de fazer o POST real para https://api.pipefy.com/graphql,
-nós montamos o mesmo payload (query + variables) e "simulamos" o envio, devolvendo
-uma resposta no mesmo shape que o Pipefy retornaria.
+This layer concentrates the queries/mutations in the EXACT format of Pipefy's
+official GraphQL API. Instead of POSTing to https://api.pipefy.com/graphql, we
+build the same payload (query + variables) and "simulate" the send, returning a
+response in the same shape Pipefy would return.
 
-Trocar a simulação por uma chamada real é só substituir `_simular_envio` por um
-POST autenticado — a string da mutation e as variáveis já estão prontas.
+Swapping the simulation for a real call is just replacing `_simulate_send` with
+an authenticated POST — the mutation string and variables are already built.
 
-Sintaxe baseada na documentação oficial:
+Syntax based on the official documentation:
 - createCard:      https://api-docs.pipefy.com/reference/mutations/createCard/
 - updateCardField: https://api-docs.pipefy.com/reference/mutations/updateCardField/
 """
@@ -21,13 +21,13 @@ logger = logging.getLogger("pipefy")
 
 
 # --------------------------------------------------------------------------- #
-# MUTATIONS (sintaxe oficial do Pipefy, parametrizada por variáveis GraphQL)  #
+# MUTATIONS (official Pipefy syntax, parameterized with GraphQL variables)    #
 # --------------------------------------------------------------------------- #
 
-# createCard: cria um card no pipe. `input` é do tipo CreateCardInput!, que
-# aceita pipe_id, title e fields_attributes ([FieldValueInput] com field_id e
-# field_value). Cada field_id corresponde a um campo configurado no formulário
-# inicial do pipe.
+# createCard: creates a card in the pipe. `input` is of type CreateCardInput!,
+# which accepts pipe_id, title and fields_attributes ([FieldValueInput] with
+# field_id and field_value). Each field_id matches a field configured in the
+# pipe's start form.
 CREATE_CARD_MUTATION = """
 mutation CreateCard($input: CreateCardInput!) {
   createCard(input: $input) {
@@ -40,9 +40,9 @@ mutation CreateCard($input: CreateCardInput!) {
 }
 """.strip()
 
-# updateCardField: atualiza UM campo de um card existente. `input` é do tipo
-# UpdateCardFieldInput! (card_id, field_id, new_value). Para atualizar vários
-# campos chamamos a mutation uma vez por campo (ver atualizar_card).
+# updateCardField: updates ONE field of an existing card. `input` is of type
+# UpdateCardFieldInput! (card_id, field_id, new_value). To update several fields
+# we call the mutation once per field (see update_card).
 UPDATE_CARD_FIELD_MUTATION = """
 mutation UpdateCardField($input: UpdateCardFieldInput!) {
   updateCardField(input: $input) {
@@ -61,33 +61,31 @@ class PipefyClient:
     def __init__(self, pipe_id: str = PIPEFY_PIPE_ID):
         self.pipe_id = pipe_id
 
-    # ----- Fluxo 1: criação de card --------------------------------------- #
-    def criar_card(
-        self, *, nome: str, email: str, valor_patrimonio: Decimal
-    ) -> dict:
-        """Monta e 'envia' a mutation createCard com os dados do cliente.
+    # ----- Flow 1: card creation ------------------------------------------ #
+    def create_card(self, *, name: str, email: str, net_worth: Decimal) -> dict:
+        """Builds and 'sends' the createCard mutation with the client data.
 
-        Devolve o card retornado e o payload GraphQL exato enviado (query +
-        variables), para que a camada superior possa expô-lo — fonte única de
-        verdade do que iria ao Pipefy.
+        Returns the created card and the exact GraphQL payload sent (query +
+        variables) so the upper layer can expose it — single source of truth of
+        what would go to Pipefy.
         """
         variables = {
             "input": {
                 "pipe_id": self.pipe_id,
-                "title": nome,
+                "title": name,
                 "fields_attributes": [
-                    {"field_id": "cliente_nome", "field_value": nome},
+                    {"field_id": "cliente_nome", "field_value": name},
                     {"field_id": "cliente_email", "field_value": email},
                     {
                         "field_id": "valor_patrimonio",
-                        "field_value": float(valor_patrimonio),
+                        "field_value": float(net_worth),
                     },
                 ],
             }
         }
-        resposta = self._simular_envio(CREATE_CARD_MUTATION, variables)
+        response = self._simulate_send(CREATE_CARD_MUTATION, variables)
         return {
-            "card": resposta["data"]["createCard"]["card"],
+            "card": response["data"]["createCard"]["card"],
             "mutations": [
                 {
                     "name": "createCard",
@@ -97,16 +95,16 @@ class PipefyClient:
             ],
         }
 
-    # ----- Fluxo 2: atualização de card ----------------------------------- #
-    def atualizar_card(self, *, card_id: str, status: str, prioridade: str) -> dict:
-        """Atualiza status e prioridade chamando updateCardField por campo (DRY).
+    # ----- Flow 2: card update -------------------------------------------- #
+    def update_card(self, *, card_id: str, status: str, priority: str) -> dict:
+        """Updates status and priority calling updateCardField per field (DRY).
 
-        Devolve os resultados e a lista de payloads GraphQL enviados (um por campo).
+        Returns the results and the list of GraphQL payloads sent (one per field).
         """
-        campos = {"status": status, "prioridade": prioridade}
-        resultados = {}
+        fields = {"status": status, "prioridade": priority}
+        results = {}
         mutations = []
-        for field_id, new_value in campos.items():
+        for field_id, new_value in fields.items():
             variables = {
                 "input": {
                     "card_id": card_id,
@@ -114,8 +112,8 @@ class PipefyClient:
                     "new_value": new_value,
                 }
             }
-            resposta = self._simular_envio(UPDATE_CARD_FIELD_MUTATION, variables)
-            resultados[field_id] = resposta["data"]["updateCardField"]["success"]
+            response = self._simulate_send(UPDATE_CARD_FIELD_MUTATION, variables)
+            results[field_id] = response["data"]["updateCardField"]["success"]
             mutations.append(
                 {
                     "name": "updateCardField",
@@ -123,12 +121,12 @@ class PipefyClient:
                     "variables": variables,
                 }
             )
-        return {"results": resultados, "mutations": mutations}
+        return {"results": results, "mutations": mutations}
 
-    # ----- Simulação do transporte ---------------------------------------- #
-    def _simular_envio(self, query: str, variables: dict) -> dict:
-        """No lugar do POST real ao Pipefy, registra o payload e devolve um
-        retorno no mesmo formato da API GraphQL do Pipefy."""
+    # ----- Transport simulation ------------------------------------------- #
+    def _simulate_send(self, query: str, variables: dict) -> dict:
+        """In place of the real POST to Pipefy, logs the payload and returns a
+        response in the same shape as Pipefy's GraphQL API."""
         logger.info("Pipefy GraphQL >> query=%s variables=%s", query, variables)
 
         if "createCard" in query:
